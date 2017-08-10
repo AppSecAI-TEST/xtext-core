@@ -58,6 +58,7 @@ import org.eclipse.xtext.xbase.lib.Functions.Function1;
 import org.eclipse.xtext.xbase.lib.IterableExtensions;
 import org.eclipse.xtext.xbase.lib.ListExtensions;
 import org.eclipse.xtext.xbase.lib.ObjectExtensions;
+import org.eclipse.xtext.xbase.lib.Pair;
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1;
 import org.eclipse.xtext.xtext.generator.Issues;
 import org.eclipse.xtext.xtext.generator.grammarAccess.GrammarAccessExtensions;
@@ -658,6 +659,14 @@ public class XtextAntlrGeneratorFragment2 extends AbstractAntlrGeneratorFragment
       @Extension
       final ContentAssistGrammarNaming naming = this.contentAssistNaming;
       final GeneratedJavaFileAccess file = this.fileFactory.createGeneratedJavaFile(naming.getParserClass(this.getGrammar()));
+      Collection<? extends AbstractElement> _allAlternatives = GrammarUtil.getAllAlternatives(this.getGrammar());
+      Collection<? extends AbstractElement> _allGroups = GrammarUtil.getAllGroups(this.getGrammar());
+      Iterable<AbstractElement> _plus = Iterables.<AbstractElement>concat(_allAlternatives, _allGroups);
+      Collection<? extends AbstractElement> _allAssignments = GrammarUtil.getAllAssignments(this.getGrammar());
+      Iterable<AbstractElement> _plus_1 = Iterables.<AbstractElement>concat(_plus, _allAssignments);
+      Collection<? extends AbstractElement> _allUnorderedGroups = GrammarUtil.getAllUnorderedGroups(this.getGrammar());
+      final Iterable<AbstractElement> elements = Iterables.<AbstractElement>filter(Iterables.<AbstractElement>concat(_plus_1, _allUnorderedGroups), AbstractElement.class);
+      final Iterable<List<AbstractElement>> partitions = Iterables.<AbstractElement>partition(elements, 1500);
       StringConcatenationClient _client = new StringConcatenationClient() {
         @Override
         protected void appendTo(StringConcatenationClient.TargetStringConcatenation _builder) {
@@ -771,36 +780,56 @@ public class XtextAntlrGeneratorFragment2 extends AbstractAntlrGeneratorFragment
           _builder.append("{");
           _builder.newLine();
           {
-            Collection<? extends AbstractElement> _allAlternatives = GrammarUtil.getAllAlternatives(XtextAntlrGeneratorFragment2.this.getGrammar());
-            Collection<? extends AbstractElement> _allGroups = GrammarUtil.getAllGroups(XtextAntlrGeneratorFragment2.this.getGrammar());
-            Iterable<AbstractElement> _plus = Iterables.<AbstractElement>concat(_allAlternatives, _allGroups);
-            Collection<? extends AbstractElement> _allAssignments = GrammarUtil.getAllAssignments(XtextAntlrGeneratorFragment2.this.getGrammar());
-            Iterable<AbstractElement> _plus_1 = Iterables.<AbstractElement>concat(_plus, _allAssignments);
-            Collection<? extends AbstractElement> _allUnorderedGroups = GrammarUtil.getAllUnorderedGroups(XtextAntlrGeneratorFragment2.this.getGrammar());
-            Iterable<AbstractElement> _filter = Iterables.<AbstractElement>filter(Iterables.<AbstractElement>concat(_plus_1, _allUnorderedGroups), AbstractElement.class);
-            for(final AbstractElement element : _filter) {
+            Iterable<Pair<Integer, List<AbstractElement>>> _indexed = IterableExtensions.<List<AbstractElement>>indexed(partitions);
+            for(final Pair<Integer, List<AbstractElement>> partition : _indexed) {
               _builder.append("\t\t\t\t\t");
-              _builder.append("put(grammarAccess.");
-              String _grammarElementAccess = XtextAntlrGeneratorFragment2.this.grammarUtil.grammarElementAccess(element);
-              _builder.append(_grammarElementAccess, "\t\t\t\t\t");
-              _builder.append(", \"");
-              String _contentAssistRuleName = AntlrGrammarGenUtil.getContentAssistRuleName(GrammarUtil.containingRule(element));
-              _builder.append(_contentAssistRuleName, "\t\t\t\t\t");
-              _builder.append("__");
-              String _gaElementIdentifier = XtextAntlrGeneratorFragment2.this.grammarUtil.gaElementIdentifier(element);
-              _builder.append(_gaElementIdentifier, "\t\t\t\t\t");
-              {
-                if ((element instanceof Group)) {
-                  _builder.append("__0");
-                }
-              }
-              _builder.append("\");");
+              _builder.append("fillMap");
+              Integer _key = partition.getKey();
+              _builder.append(_key, "\t\t\t\t\t");
+              _builder.append("();");
               _builder.newLineIfNotEmpty();
             }
           }
           _builder.append("\t\t\t\t");
           _builder.append("}");
           _builder.newLine();
+          {
+            Iterable<Pair<Integer, List<AbstractElement>>> _indexed_1 = IterableExtensions.<List<AbstractElement>>indexed(partitions);
+            for(final Pair<Integer, List<AbstractElement>> partition_1 : _indexed_1) {
+              _builder.append("\t\t\t\t");
+              _builder.append("private void fillMap");
+              Integer _key_1 = partition_1.getKey();
+              _builder.append(_key_1, "\t\t\t\t");
+              _builder.append("() {");
+              _builder.newLineIfNotEmpty();
+              {
+                List<AbstractElement> _value = partition_1.getValue();
+                for(final AbstractElement element : _value) {
+                  _builder.append("\t\t\t\t");
+                  _builder.append("\t");
+                  _builder.append("put(grammarAccess.");
+                  String _grammarElementAccess = XtextAntlrGeneratorFragment2.this.grammarUtil.grammarElementAccess(element);
+                  _builder.append(_grammarElementAccess, "\t\t\t\t\t");
+                  _builder.append(", \"");
+                  String _contentAssistRuleName = AntlrGrammarGenUtil.getContentAssistRuleName(GrammarUtil.containingRule(element));
+                  _builder.append(_contentAssistRuleName, "\t\t\t\t\t");
+                  _builder.append("__");
+                  String _gaElementIdentifier = XtextAntlrGeneratorFragment2.this.grammarUtil.gaElementIdentifier(element);
+                  _builder.append(_gaElementIdentifier, "\t\t\t\t\t");
+                  {
+                    if ((element instanceof Group)) {
+                      _builder.append("__0");
+                    }
+                  }
+                  _builder.append("\");");
+                  _builder.newLineIfNotEmpty();
+                }
+              }
+              _builder.append("\t\t\t\t");
+              _builder.append("}");
+              _builder.newLine();
+            }
+          }
           _builder.append("\t\t\t");
           _builder.append("};");
           _builder.newLine();
